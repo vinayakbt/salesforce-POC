@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="fetch_salesforce_object_detailsFlow" doc:id="b4376b02-f85d-45b9-8b5e-0367fa078d0e" >
+		<http:listener doc:name="Listener" doc:id="0c3e6d8f-fbd3-4887-8eda-7da42317e2d7" path="/fetch" allowedMethods="GET" config-ref="HTTP_Listener_config"/>
+		<logger level="INFO" doc:name="Logger" doc:id="a29145bb-3e57-48b4-af1b-a397d9da7a84" message='#["Api started to fetch SF Object Details...."]'/>
+		<salesforce:query doc:name="Query" doc:id="1600c7ce-1f8c-4a4b-98d7-5258dbbeffe3" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT Name, emp_phone__c, emp_email__c, emp_skills__c, LastModifiedDate FROM emp_profile__c WHERE emp_skills__c = ':skills' ]]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[{
+	"skills": attributes.queryParams.skills
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform doc:name="Transform Message" doc:id="165e819d-39e9-4796-9eef-4925a8558243" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map
+ {
+	"emp_Name" : $.Name,
+	"emp_Phone": $.emp_phone__c,
+	"emp_Email": $.emp_email__c,
+	"emp_Skills": $.emp_skills__c,
+	"Last Modified Date": $.LastModifiedDate
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="19defe34-b274-482d-86c6-4f1c5b4c55d7" message="#[payload]"/>
+	</flow>
+</mule>
